@@ -276,13 +276,16 @@ typedef struct bd_info {
 #endif
 } bd_t;
 
+环境变量的优先级，先使用环境变量，没有的话使用程序的变量。
+执行env_relocate时，会判断SD卡中的env分区的crc是否通过。如果crc通过则说明SD卡中有正确的环境变量存储，
+则会从SD中读取环境变量来作为当前的环境变量。
 
 typedef	struct environment_s {
 	uint32_t	crc;		/* CRC32 over data bytes	*/
 #ifdef CFG_REDUNDAND_ENVIRONMENT
 	unsigned char	flags;		/* active/obsolete flags	*/
 #endif
-	unsigned char	data[ENV_SIZE]; /* Environment data		*/  16k - 5Byte
+	unsigned char	data[ENV_SIZE]; /* Environment data		*/  16k - 4Byte
 } env_t;
 
 
@@ -505,10 +508,22 @@ struct cmd_tbl_s {
 #endif
 };
 /**********************************************************************************************/
+命令段属性
 #define U_BOOT_CMD(name,maxargs,rep,cmd,usage,help) \
 cmd_tbl_t __u_boot_cmd_##name Struct_Section = {#name, maxargs, rep, cmd, usage, help}
 
 #define Struct_Section  __attribute__ ((unused,section (".u_boot_cmd")))
-
+/**********************************************************************************************/
 
 void	(*theKernel)(int zero, int arch, uint params)；//镜像内核的入口函数格式
+
+
+init_raw_area_table初始化原始分区表（sd卡分区）
+BL1  			raw_area_control.image[1].start_blk = 第1个块   raw_area_control.image[1].used_blk = 16个块
+environment  	raw_area_control.image[2].start_blk = 第17个块   raw_area_control.image[2].used_blk = 32个块
+BL2  			raw_area_control.image[3].start_blk = 第49个块   raw_area_control.image[3].used_blk = 1024个块
+kernel  		raw_area_control.image[4].start_blk = 第1073个块   raw_area_control.image[4].used_blk = 4*1024*1024/512 = 8*1024 = 8192个块
+RFS  			raw_area_control.image[5].start_blk = 第9265个块   raw_area_control.image[5].used_blk = 26*1024*1024/512个块		
+
+
+
